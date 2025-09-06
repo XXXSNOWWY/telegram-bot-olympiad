@@ -2,18 +2,16 @@ import telebot
 from telebot import types
 import openpyxl
 import os
+import re
 
-# Tokenni Railway environment variables dan oladi
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-# Kanal username (faqat @ bilan yoziladi)
 CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"
-
-# Excel fayl nomi
 EXCEL_FILE = "registratsiya.xlsx"
+ADMIN_ID = 1302280468
 
-# Excel fayl yo‘q bo‘lsa, yaratamiz
+# Excel fayl bo‘lmasa, yaratamiz
 if not os.path.exists(EXCEL_FILE):
     wb = openpyxl.Workbook()
     sheet = wb.active
@@ -23,10 +21,7 @@ if not os.path.exists(EXCEL_FILE):
 
 user_data = {}
 
-# ADMIN ID
-ADMIN_ID = 1302280468
-
-# Obuna bo‘lganligini tekshirish
+# Obuna tekshirish
 def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
@@ -35,20 +30,24 @@ def is_subscribed(user_id):
         print("is_subscribed xatosi:", e)
         return False
 
+# Validatsiya (ism/familiya)
+def valid_name(text):
+    return bool(re.match(r"^[A-Z][a-zA-Z'\- ]+$", text))
+
 # START komandasi
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.from_user.id
 
-    # Agar admin bo‘lsa → ro‘yxatni ko‘rsatadi
     if user_id == ADMIN_ID:
+        # Admin uchun ro‘yxat ko‘rsatish
         if not os.path.exists(EXCEL_FILE):
             bot.send_message(user_id, "📂 Hali hech kim ro‘yxatdan o‘tmagan.")
             return
 
         wb = openpyxl.load_workbook(EXCEL_FILE)
         sheet = wb.active
-        rows = list(sheet.iter_rows(values_only=True))[1:]  # sarlavhadan tashqari
+        rows = list(sheet.iter_rows(values_only=True))[1:]
 
         if not rows:
             bot.send_message(user_id, "📂 Hali hech kim ro‘yxatdan o‘tmagan.")
@@ -57,17 +56,13 @@ def start(message):
             for idx, row in enumerate(rows, start=1):
                 ism, familiya, sinf, tel = row
                 matn += f"{idx}. {ism} {familiya}, {sinf}-sinf, 📞 {tel}\n"
-
             bot.send_message(user_id, matn, parse_mode="Markdown")
 
-        # Shu joyning o‘zida faylni ham yuboramiz
         with open(EXCEL_FILE, "rb") as f:
             bot.send_document(user_id, f)
 
     else:
-        # Oddiy foydalanuvchilar uchun
         user_data[user_id] = {}
-
         if is_subscribed(user_id):
             bot.send_message(user_id, "Assalomu alaykum! Ro'yxatdan o‘tishni boshlaymiz.\nIsmingizni yozing:")
             bot.register_next_step_handler(message, get_name)
@@ -94,6 +89,10 @@ def check_subscription(call):
 # Ism
 def get_name(message):
     chat_id = message.from_user.id
+    if not valid_name(message.text):
+        bot.send_message(chat_id, "❌ Ism faqat lotin harflarida va bosh harf bilan yozilishi kerak.\nQaytadan kiriting:")
+        bot.register_next_step_handler(message, get_name)
+        return
     user_data[chat_id]["ism"] = message.text
     bot.send_message(chat_id, "Familiyangizni yozing:")
     bot.register_next_step_handler(message, get_surname)
@@ -101,21 +100,53 @@ def get_name(message):
 # Familiya
 def get_surname(message):
     chat_id = message.from_user.id
+    if not valid_name(message.text):
+        bot.send_message(chat_id, "❌ Familiya faqat lotin harflarida va bosh harf bilan yozilishi kerak.\nQaytadan kiriting:")
+        bot.register_next_step_handler(message, get_surname)
+        return
     user_data[chat_id]["familiya"] = message.text
-    bot.send_message(chat_id, "Nechanchi sinfda o‘qiysiz?")
+
+    # 1–11 sinf tugmalari
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    rows = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"], ["10", "11"]]
+    for row in rows:
+        markup.add(*[types.KeyboardButton(num) for num in row])
+
+    bot.send_message(chat_id, "Nechanchi sinfda o‘qiysiz?", reply_markup=markup)
     bot.register_next_step_handler(message, get_class)
 
 # Sinf
 def get_class(message):
     chat_id = message.from_user.id
-    user_data[chat_id]["sinf"] = message.text
-    bot.send_message(chat_id, "Telefon raqamingizni yozing:")
+    text = message.text.strip()
+
+    if not text.isdigit() or not (1 <= int(text) <= 11):
+        bot.send_message(chat_id, "❌ Sinfni faqat 1 dan 11 gacha tanlang.")
+        return get_surname(message)
+
+    user_data[chat_id]["sinf"] = text
+
+    # Telefon tugmasi
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    btn1 = types.KeyboardButton("📱 Raqamni yuborish", request_contact=True)
+    markup.add(btn1)
+    bot.send_message(chat_id, "Telefon raqamingizni yuboring:", reply_markup=markup)
     bot.register_next_step_handler(message, get_phone)
 
 # Telefon
 def get_phone(message):
     chat_id = message.from_user.id
-    user_data[chat_id]["telefon"] = message.text
+
+    if message.contact:
+        phone = message.contact.phone_number
+    else:
+        phone = message.text.strip()
+        if not re.match(r"^\+?\d{9,15}$", phone):
+            bot.send_message(chat_id, "❌ Telefon raqam noto‘g‘ri formatda. +998901234567 ko‘rinishida yuboring:")
+            bot.register_next_step_handler(message, get_phone)
+            return
+
+    user_data[chat_id]["telefon"] = phone
 
     # Excelga yozish
     wb = openpyxl.load_workbook(EXCEL_FILE)
@@ -128,9 +159,9 @@ def get_phone(message):
     ])
     wb.save(EXCEL_FILE)
 
-    bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz! Imtihon vaqti haqida keyinroq xabar beramiz.")
+    bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!", reply_markup=types.ReplyKeyboardRemove())
 
-# Faqat admin uchun faylni olish
+# Admin uchun fayl
 @bot.message_handler(commands=['getfile'])
 def send_file(message):
     if message.from_user.id == ADMIN_ID:
