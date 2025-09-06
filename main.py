@@ -6,7 +6,7 @@ import os
 TOKEN = os.getenv("TOKEN")  # Railway Variables dan oladi
 bot = telebot.TeleBot(TOKEN)
 
-CHANNEL_USERNAME = "@Mingbulak_SPC"  # faqat @username ko‘rinishida yozing!
+CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"  # faqat @username ko‘rinishida yozing!
 
 EXCEL_FILE = "registratsiya.xlsx"
 
