@@ -25,12 +25,13 @@ def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
         return member.status in ["member", "administrator", "creator"]
-    except:
+    except Exception as e:
+        print("is_subscribed xatosi:", e)
         return False
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    user_id = message.chat.id
+    user_id = message.from_user.id  # ⚡ faqat foydalanuvchi ID sini olish kerak
     user_data[user_id] = {}
 
     if is_subscribed(user_id):
@@ -46,34 +47,35 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "check_sub")
 def check_subscription(call):
-    user_id = call.message.chat.id
+    user_id = call.from_user.id   # ⚡ callback orqali foydalanuvchi ID sini olish kerak
     if is_subscribed(user_id):
         bot.edit_message_text("✅ Obuna tasdiqlandi! Endi ro‘yxatdan o‘tamiz.\nIsmingizni yozing:",
-                              chat_id=user_id, message_id=call.message.message_id)
+                              chat_id=call.message.chat.id,
+                              message_id=call.message.message_id)
         bot.register_next_step_handler(call.message, get_name)
     else:
         bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmadingiz!")
 
 def get_name(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     user_data[chat_id]["ism"] = message.text
     bot.send_message(chat_id, "Familiyangizni yozing:")
     bot.register_next_step_handler(message, get_surname)
 
 def get_surname(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     user_data[chat_id]["familiya"] = message.text
     bot.send_message(chat_id, "Nechanchi sinfda o‘qiysiz?")
     bot.register_next_step_handler(message, get_class)
 
 def get_class(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     user_data[chat_id]["sinf"] = message.text
     bot.send_message(chat_id, "Telefon raqamingizni yozing:")
     bot.register_next_step_handler(message, get_phone)
 
 def get_phone(message):
-    chat_id = message.chat.id
+    chat_id = message.from_user.id
     user_data[chat_id]["telefon"] = message.text
 
     # Excel faylga yozish
@@ -94,7 +96,7 @@ ADMIN_ID = 1302280468
 
 @bot.message_handler(commands=['getfile'])
 def send_file(message):
-    if message.chat.id == ADMIN_ID:
+    if message.from_user.id == ADMIN_ID:
         with open(EXCEL_FILE, "rb") as f:
             bot.send_document(message.chat.id, f)
     else:
@@ -102,3 +104,4 @@ def send_file(message):
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
+
