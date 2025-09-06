@@ -2,7 +2,7 @@ import telebot
 import openpyxl
 import os
 
-TOKEN = "YOUR_BOT_TOKEN"
+TOKEN = "8402530905:AAFqUgUYntJ5slqPQZZefTvyQ0F77KnTUK0"
 bot = telebot.TeleBot(TOKEN)
 
 CHANNEL_USERNAME = "@Mingbulak_SPC"  # kanal username
