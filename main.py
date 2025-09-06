@@ -1,27 +1,26 @@
-import os
 import telebot
+from telebot import types
 import openpyxl
+import os
 
-# TOKEN endi Railway Variables’dan olinadi
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("TOKEN")  # Railway Variables dan oladi
 bot = telebot.TeleBot(TOKEN)
 
-CHANNEL_USERNAME = "https://t.me/Mingbulak_SPC"  # kanal username
+CHANNEL_USERNAME = "@Mingbulak_SPC"  # faqat @username ko‘rinishida yozing!
 
-# Excel fayl nomi
 EXCEL_FILE = "registratsiya.xlsx"
 
-# Agar fayl mavjud bo'lmasa, yangisini yaratamiz
+# Excel fayl yo‘q bo‘lsa, yaratamiz
 if not os.path.exists(EXCEL_FILE):
     wb = openpyxl.Workbook()
     sheet = wb.active
     sheet.title = "Qatnashuvchilar"
-    sheet.append(["Ism", "Familiya", "Sinf", "Telefon"])  # ustun nomlari
+    sheet.append(["Ism", "Familiya", "Sinf", "Telefon"])
     wb.save(EXCEL_FILE)
 
 user_data = {}
 
-# Foydalanuvchi kanalga azo bo'lganini tekshirish
+# Obuna bo‘lganligini tekshirish funksiyasi
 def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
@@ -33,11 +32,27 @@ def is_subscribed(user_id):
 def start(message):
     user_id = message.chat.id
     user_data[user_id] = {}
+
     if is_subscribed(user_id):
         bot.send_message(user_id, "Assalomu alaykum! Ro'yxatdan o‘tishni boshlaymiz.\nIsmingizni yozing:")
         bot.register_next_step_handler(message, get_name)
     else:
-        bot.send_message(user_id, f"Avval {CHANNEL_USERNAME} kanaliga obuna bo‘ling va /start ni qayta yuboring.")
+        markup = types.InlineKeyboardMarkup()
+        join_button = types.InlineKeyboardButton("📢 Kanalga qo‘shilish", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")
+        check_button = types.InlineKeyboardButton("✅ Obunani tekshirish", callback_data="check_sub")
+        markup.add(join_button)
+        markup.add(check_button)
+        bot.send_message(user_id, "Avval kanalga obuna bo‘ling 👇", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data == "check_sub")
+def check_subscription(call):
+    user_id = call.message.chat.id
+    if is_subscribed(user_id):
+        bot.edit_message_text("✅ Obuna tasdiqlandi! Endi ro‘yxatdan o‘tamiz.\nIsmingizni yozing:",
+                              chat_id=user_id, message_id=call.message.message_id)
+        bot.register_next_step_handler(call.message, get_name)
+    else:
+        bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmadingiz!")
 
 def get_name(message):
     chat_id = message.chat.id
@@ -74,17 +89,16 @@ def get_phone(message):
 
     bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz! Imtihon vaqti haqida keyinroq xabar beramiz.")
 
-# Admin Excel faylni yuklab olishi uchun
-ADMIN_ID = 1302280468   # bu yerga o'zingizning Telegram ID raqamingizni yozing
+# Faqat admin Excel faylni olish imkoniyati
+ADMIN_ID = 1302280468
 
 @bot.message_handler(commands=['getfile'])
 def send_file(message):
-    if message.chat.id == ADMIN_ID:   # faqat admin ko'ra oladi
+    if message.chat.id == ADMIN_ID:
         with open(EXCEL_FILE, "rb") as f:
             bot.send_document(message.chat.id, f)
     else:
         bot.send_message(message.chat.id, "❌ Sizda ruxsat yo‘q.")
 
-print("Bot ishga tushdi (Railway)...")
-bot.polling(none_stop=True)
-
+print("Bot ishlayapti...")
+bot.infinity_polling()
