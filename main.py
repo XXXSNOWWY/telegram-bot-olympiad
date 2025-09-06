@@ -6,7 +6,8 @@ import os
 TOKEN = os.getenv("TOKEN")  # Railway Variables dan oladi
 bot = telebot.TeleBot(TOKEN)
 
-CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"  # faqat @username ko‘rinishida yozing!
+# Kanal username (o'zgartirmoqchi bo'lsangiz, faqat shu joyni yangilang)
+CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"
 
 EXCEL_FILE = "registratsiya.xlsx"
 
@@ -24,6 +25,7 @@ user_data = {}
 def is_subscribed(user_id):
     try:
         member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
+        print(f"[DEBUG] {user_id} status: {member.status}")  # log uchun
         return member.status in ["member", "administrator", "creator"]
     except Exception as e:
         print("is_subscribed xatosi:", e)
@@ -31,7 +33,7 @@ def is_subscribed(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    user_id = message.from_user.id  # ⚡ faqat foydalanuvchi ID sini olish kerak
+    user_id = message.from_user.id
     user_data[user_id] = {}
 
     if is_subscribed(user_id):
@@ -39,7 +41,9 @@ def start(message):
         bot.register_next_step_handler(message, get_name)
     else:
         markup = types.InlineKeyboardMarkup()
-        join_button = types.InlineKeyboardButton("📢 Kanalga qo‘shilish", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")
+        join_button = types.InlineKeyboardButton(
+            "📢 Kanalga qo‘shilish", url=f"https://t.me/{CHANNEL_USERNAME[1:]}"
+        )
         check_button = types.InlineKeyboardButton("✅ Obunani tekshirish", callback_data="check_sub")
         markup.add(join_button)
         markup.add(check_button)
@@ -47,11 +51,13 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "check_sub")
 def check_subscription(call):
-    user_id = call.from_user.id   # ⚡ callback orqali foydalanuvchi ID sini olish kerak
+    user_id = call.from_user.id
     if is_subscribed(user_id):
-        bot.edit_message_text("✅ Obuna tasdiqlandi! Endi ro‘yxatdan o‘tamiz.\nIsmingizni yozing:",
-                              chat_id=call.message.chat.id,
-                              message_id=call.message.message_id)
+        bot.edit_message_text(
+            "✅ Obuna tasdiqlandi! Endi ro‘yxatdan o‘tamiz.\nIsmingizni yozing:",
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id
+        )
         bot.register_next_step_handler(call.message, get_name)
     else:
         bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmadingiz!")
@@ -104,4 +110,3 @@ def send_file(message):
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
-
