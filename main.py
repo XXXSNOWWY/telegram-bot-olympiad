@@ -140,11 +140,6 @@ def get_contact(message):
     bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!", reply_markup=types.ReplyKeyboardRemove())
 
 
-# Telefon (oddiy matn orqali)
-def get_phone(message):
-    chat_id = message.from_user.id
-    phone = message.text.strip()
-
     if not re.match(r'^\+?\d{7,15}$', phone):
         bot.send_message(chat_id, "❌ Telefon raqamni to‘g‘ri kiriting. Masalan: +998901234567")
         bot.register_next_step_handler(message, get_phone)
