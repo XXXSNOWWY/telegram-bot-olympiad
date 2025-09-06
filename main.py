@@ -1,11 +1,12 @@
+import os
 import telebot
 import openpyxl
-import os
 
-TOKEN = "8402530905:AAFqUgUYntJ5slqPQZZefTvyQ0F77KnTUK0"
+# TOKEN endi Railway Variables’dan olinadi
+TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-CHANNEL_USERNAME = "@Mingbulak_SPC"  # kanal username
+CHANNEL_USERNAME = "https://t.me/Mingbulak_SPC"  # kanal username
 
 # Excel fayl nomi
 EXCEL_FILE = "registratsiya.xlsx"
@@ -73,5 +74,17 @@ def get_phone(message):
 
     bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz! Imtihon vaqti haqida keyinroq xabar beramiz.")
 
-print("Bot ishlayapti...")
+# Admin Excel faylni yuklab olishi uchun
+ADMIN_ID = 1302280468   # bu yerga o'zingizning Telegram ID raqamingizni yozing
+
+@bot.message_handler(commands=['getfile'])
+def send_file(message):
+    if message.chat.id == ADMIN_ID:   # faqat admin ko'ra oladi
+        with open(EXCEL_FILE, "rb") as f:
+            bot.send_document(message.chat.id, f)
+    else:
+        bot.send_message(message.chat.id, "❌ Sizda ruxsat yo‘q.")
+
+print("Bot ishga tushdi (Railway)...")
 bot.polling(none_stop=True)
+
