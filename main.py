@@ -133,24 +133,20 @@ def get_class(message):
 @bot.message_handler(content_types=['contact'])
 def get_contact(message):
     chat_id = message.from_user.id
-    phone = message.contact.phone_number
-    user_data[chat_id]["telefon"] = phone
+    phone = message.contact.phone_number.strip()
 
-    save_to_excel(chat_id)
-    bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!", reply_markup=types.ReplyKeyboardRemove())
+    # Faqat raqamlarni qoldiramiz
+    phone_clean = re.sub(r'\D', '', phone)
 
-
-    if not re.match(r'^\+?\d{7,15}$', phone):
-        bot.send_message(chat_id, "❌ Telefon raqamni to‘g‘ri kiriting. Masalan: +998901234567")
-        bot.register_next_step_handler(message, get_phone)
+    if not re.match(r'^\d{9,15}$', phone_clean):
+        bot.send_message(chat_id, "❌ Telefon raqamni to‘g‘ri yuboring. Masalan: +998901234567")
         return
 
-    user_data[chat_id]["telefon"] = phone
+    user_data[chat_id]["telefon"] = "+" + phone_clean  # + qo‘shib qo‘yamiz
 
     save_to_excel(chat_id)
     bot.send_message(chat_id, "✅ Siz muvaffaqiyatli ro'yxatdan o'tdingiz!", reply_markup=types.ReplyKeyboardRemove())
-
-
+    
 # Excelga yozish
 def save_to_excel(chat_id):
     wb = openpyxl.load_workbook(EXCEL_FILE)
