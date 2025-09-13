@@ -10,6 +10,41 @@ bot = telebot.TeleBot(TOKEN)
 
 # Kanal username
 CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"
+# Global o'zgaruvchi
+waiting_for_broadcast = False
+
+# Faqat admin /sendall buyrug'i
+@bot.message_handler(commands=['sendall'])
+def send_all_command(message):
+    global waiting_for_broadcast
+    if message.from_user.id == ADMIN_ID:
+        bot.send_message(message.chat.id, "✍️ Barcha foydalanuvchilarga yuboriladigan xabarni kiriting:")
+        waiting_for_broadcast = True
+    else:
+        bot.send_message(message.chat.id, "❌ Sizda ruxsat yo‘q.")
+
+# Admin yuborgan xabarni barchaga tarqatish
+@bot.message_handler(func=lambda msg: True)
+def handle_message(message):
+    global waiting_for_broadcast
+    if message.from_user.id == ADMIN_ID and waiting_for_broadcast:
+        broadcast_message = message.text
+
+        wb = openpyxl.load_workbook(EXCEL_FILE)
+        sheet = wb.active
+
+        count = 0
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            # Bizda telefon saqlanadi, lekin Telegram ID yo'q
+            # Agar Telegram ID saqlasangiz, shu yerda ishlatamiz
+            try:
+                bot.send_message(row[4], broadcast_message)  # masalan 5-ustunda user_id saqlansa
+                count += 1
+            except Exception as e:
+                print("Xabar yuborilmadi:", e)
+
+        bot.send_message(message.chat.id, f"✅ Xabar {count} ta foydalanuvchiga yuborildi.")
+        waiting_for_broadcast = False
 
 # Excel fayl nomi
 EXCEL_FILE = "registratsiya.xlsx"
@@ -155,10 +190,10 @@ def save_to_excel(chat_id):
         user_data[chat_id]["ism"],
         user_data[chat_id]["familiya"],
         user_data[chat_id]["sinf"],
-        user_data[chat_id]["telefon"]
+        user_data[chat_id]["telefon"],
+        chat_id   # Telegram foydalanuvchi ID ham saqlanadi
     ])
     wb.save(EXCEL_FILE)
-
 
 # Admin uchun ro‘yxatni matn ko‘rinishida yuborish
 def send_registered_users(message):
