@@ -9,7 +9,7 @@ TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 # Kanal username
-CHANNEL_USERNAME = "@Xamidjonov_Xusniddin"
+CHANNEL_USERNAME = "@MATEMATIKA_Mingbuloq"
 # Global o'zgaruvchi
 waiting_for_broadcast = False
 
