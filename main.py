@@ -12,7 +12,7 @@ bot = telebot.TeleBot(TOKEN)
 # Ikkinchi kanal nomini o'zingiznikiga o'zgartiring!
 CHANNELS = [
     {"username": "@MATEMATIKA_Mingbuloq", "link": "https://t.me/MATEMATIKA_Mingbuloq"},
-    {"username": "@Mingbulak_SPC", "link": "https://t.me/Mingbulak_SPC"}
+    {"username": "@mingbuloq_test", "link": "https://t.me/mingbuloq_test"}
 ]
 
 ADMIN_ID = 1302280468
