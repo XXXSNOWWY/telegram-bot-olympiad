@@ -8,15 +8,17 @@ from telebot import types
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-# Kanallar ro'yxati (Username va taklif havolalari)
-# Ikkinchi kanal nomini o'zingiznikiga o'zgartiring!
-CHANNELS = [
-    {"username": "@MATEMATIKA_Mingbuloq", "link": "https://t.me/MATEMATIKA_Mingbuloq"},
-]
-
+# Kanal username va Admin ID
+CHANNEL_USERNAME = "@MATEMATIKA_Mingbuloq"
 ADMIN_ID = 1302280468
+
+# Excel fayl nomi
 EXCEL_FILE = "registratsiya.xlsx"
+
+# Global o'zgaruvchi
 waiting_for_broadcast = False
+
+# Foydalanuvchilar ma’lumotlari
 user_data = {}
 
 # Excel fayl yo‘q bo‘lsa, yaratamiz
@@ -27,17 +29,14 @@ if not os.path.exists(EXCEL_FILE):
     sheet.append(["Ism", "Familiya", "Sinf", "Telefon", "Telegram ID"])
     wb.save(EXCEL_FILE)
 
-# Barcha kanallarga obunani tekshirish
-def is_subscribed_all(user_id):
-    for ch in CHANNELS:
-        try:
-            member = bot.get_chat_member(ch["username"], user_id)
-            if member.status not in ["member", "administrator", "creator"]:
-                return False
-        except Exception as e:
-            print(f"{ch['username']} obuna tekshirishda xato:", e)
-            return False
-    return True
+# Obuna tekshirish
+def is_subscribed(user_id):
+    try:
+        member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print("is_subscribed xatosi:", e)
+        return False
 
 # START komandasi
 @bot.message_handler(commands=['start'])
@@ -50,31 +49,29 @@ def start(message):
 
     user_data[user_id] = {}
 
-    if is_subscribed_all(user_id):
+    if is_subscribed(user_id):
         bot.send_message(user_id, "Assalomu alaykum! Ro'yxatdan o‘tishni boshlaymiz.\nIsmingizni yozing:")
         bot.register_next_step_handler(message, get_name)
     else:
         markup = types.InlineKeyboardMarkup()
-        for i, ch in enumerate(CHANNELS, start=1):
-            btn = types.InlineKeyboardButton(f"📢 {i}-kanalga qo‘shilish", url=ch["link"])
-            markup.add(btn)
-        
+        join_button = types.InlineKeyboardButton("📢 Kanalga qo‘shilish", url=f"https://t.me/{CHANNEL_USERNAME[1:]}") 
         check_button = types.InlineKeyboardButton("✅ Obunani tekshirish", callback_data="check_sub")
+        markup.add(join_button)
         markup.add(check_button)
-        bot.send_message(user_id, "Ro'yxatdan o'tish uchun quyidagi kanallarga obuna bo‘ling 👇", reply_markup=markup)
+        bot.send_message(user_id, "Avval kanalga obuna bo‘ling 👇", reply_markup=markup)
 
 # Obunani tekshirish tugmasi
 @bot.callback_query_handler(func=lambda call: call.data == "check_sub")
 def check_subscription(call):
     user_id = call.from_user.id
-    if is_subscribed_all(user_id):
+    if is_subscribed(user_id):
         user_data[user_id] = {}
         bot.edit_message_text("✅ Obuna tasdiqlandi! Endi ro‘yxatdan o‘tamiz.\nIsmingizni yozing:",
                               chat_id=call.message.chat.id,
                               message_id=call.message.message_id)
         bot.register_next_step_handler(call.message, get_name)
     else:
-        bot.answer_callback_query(call.id, "❌ Siz hali barcha kanallarga obuna bo‘lmadingiz!", show_alert=True)
+        bot.answer_callback_query(call.id, "❌ Siz hali obuna bo‘lmadingiz!", show_alert=True)
 
 # Ism
 def get_name(message):
@@ -105,7 +102,7 @@ def get_surname(message):
 
     user_data[chat_id]["familiya"] = text
 
-    # 1-11 sinflar uchun tugmalar
+    # 1-11 sinf tugmalari
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     markup.row("1", "2", "3")
     markup.row("4", "5", "6")
