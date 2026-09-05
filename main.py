@@ -2,6 +2,9 @@ import os
 import re
 import openpyxl
 import telebot
+from telebot import apihelper
+# PythonAnywhere proksisini majburiy o'rnatish
+apihelper.proxy = {'https': 'http://proxy.server:3128'}
 from telebot import types
 
 # Token (Environment Variable)
@@ -231,3 +234,4 @@ def handle_broadcast(message):
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
+    
