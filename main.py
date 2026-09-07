@@ -3,9 +3,8 @@ import re
 import openpyxl
 import telebot
 from telebot import apihelper
-# PythonAnywhere proksisini majburiy o'rnatish
+# PythonAnywhere proksisini kodingizga biriktirish
 apihelper.proxy = {'https': 'http://proxy.server:3128'}
-from telebot import types
 
 # Token (Environment Variable)
 TOKEN = os.getenv("TOKEN")
