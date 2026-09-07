@@ -1,12 +1,13 @@
 import os
 import re
-import openpyxl
 import telebot
-from telebot import apihelper
-# PythonAnywhere proksisini kodingizga biriktirish
+from telebot import types, apihelper
+import openpyxl
+
+# PythonAnywhere proksisini kodingizga to'g'ri biriktirish
 apihelper.proxy = {'https': 'http://proxy.server:3128'}
 
-# Token (Environment Variable)
+# Bot tokenni olish
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
