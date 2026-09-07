@@ -234,4 +234,5 @@ def handle_broadcast(message):
 
 print("Bot ishlayapti...")
 bot.infinity_polling()
-    
+# main.py faylining eng oxirgi qatori
+bot.infinity_polling(skip_pending=False)    
