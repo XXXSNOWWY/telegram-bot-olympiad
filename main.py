@@ -1,6 +1,16 @@
 import os
 import re
 import telebot
+import time
+
+if __name__ == '__main__':
+    print("Bot ishlayapti...")
+    while True:
+        try:
+            bot.infinity_polling(skip_pending=False, timeout=10, long_polling_timeout=5)
+        except Exception as e:
+            print(f"Proksi yoki tarmoq xatosi bo'ldi: {e}")
+            time.sleep(5)  # 5 soniya kutib, qayta ulanishga harakat qiladi
 from telebot import types, apihelper
 import openpyxl
 
