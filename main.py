@@ -1,28 +1,76 @@
 import os
+import re
 import time
+import openpyxl
 import telebot
-from telebot import apihelper
+from telebot import types, apihelper
 
-# Tizim muhitidan tokenni olish
+# 1. Proksi va Botni global e'lon qilish (NameError va Proksi xatolarini oldini oladi)
+apihelper.proxy = {'https': 'http://proxy.server:3128'}
 TOKEN = os.getenv("TOKEN")
+bot = telebot.TeleBot(TOKEN)
 
+EXCEL_FILE = "registratsiya.xlsx"
+
+# Excel faylini yaratish yoki mavjudini tayyorlash
+def init_excel():
+    if not os.path.exists(EXCEL_FILE):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Ro'yxat"
+        ws.append(["ID", "Telegram User", "Ism-Familiya", "Telefon", "Maktab/Tashkilot", "Sana"])
+        wb.save(EXCEL_FILE)
+
+init_excel()
+
+# ==========================================
+# 2. HANDLERLAR (BOT BUYRUQLARI VA MANTIQ)
+# ==========================================
+
+@bot.message_handler(commands=['start'])
+def start_cmd(message):
+    try:
+        user_first_name = message.from_user.first_name
+        welcome_text = (
+            f"Assalomu alaykum, {user_first_name}!\n\n"
+            "Olimpiadaga ro'yxatdan o'tish botiga xush kelibsiz.\n"
+            "Boshlash uchun pastdagi buyruqlardan foydalaning yoki ma'lumotlaringizni kiriting."
+        )
+        bot.reply_to(message, welcome_text)
+    except Exception as e:
+        print(f"Start buyrug'ida xatolik: {e}")
+
+@bot.message_handler(commands=['getfile'])
+def getfile_cmd(message):
+    try:
+        if os.path.exists(EXCEL_FILE):
+            with open(EXCEL_FILE, "rb") as file:
+                bot.send_document(message.chat.id, file, caption="📊 Ro'yxatdan o'tganlar bazasi")
+        else:
+            bot.reply_to(message, "⚠️ Hozircha hech qanday ro'yxat fayli mavjud emas.")
+    except Exception as e:
+        bot.reply_to(message, f"❌ Faylni yuborishda xatolik yuz berdi: {e}")
+
+@bot.message_handler(func=lambda message: True)
+def echo_all(message):
+    try:
+        bot.reply_to(message, "Xabaringiz qabul qilindi. Operatorlarimiz tez orada siz bilan bog'lanishadi.")
+    except Exception as e:
+        print(f"Xabarni qayta ishlashda xatolik: {e}")
+
+# ==========================================
+# 3. CHILANISH VA AVTO-TIKLANISH SIKLI
+# ==========================================
 if __name__ == '__main__':
     print("Bot ishlayapti...")
     
     while True:
         try:
-            # Proksini sozlash va botni har bitta sikl aylanganda toza yaratish
-            apihelper.proxy = {'https': 'http://proxy.server:3128'}
-            bot = telebot.TeleBot(TOKEN)
-            
-            # Shu yerda botni ishga tushiramiz
+            # Proksi uzilsa ham qayta ulanadi va offline vaqtida kelgan xabarlarni saqlaydi
             bot.polling(none_stop=True, timeout=30, long_polling_timeout=10, skip_pending=False)
-            
         except Exception as e:
-            print(f"Xatolik yuz berdi: {e}")
-            time.sleep(10)  # Proksiga ortiqcha yuklama tushmasligi uchun 10 soniya kutish
-
-# Kanal username va Admin ID
+            print(f"Proksi yoki tarmoq xatosi bo'ldi (qayta ulanmoqda): {e}")
+            time.sleep(5)  # 5 soniya kutib qayta ulanadi# Kanal username va Admin ID
 CHANNEL_USERNAME = "@MATEMATIKA_Mingbuloq"
 ADMIN_ID = 1302280468
 
