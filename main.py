@@ -1,34 +1,26 @@
 import os
-import re
 import time
+import telebot
+from telebot import apihelper
+
+# Tizim muhitidan tokenni olish
+TOKEN = os.getenv("TOKEN")
+
 if __name__ == '__main__':
     print("Bot ishlayapti...")
+    
     while True:
         try:
+            # Proksini sozlash va botni har bitta sikl aylanganda toza yaratish
+            apihelper.proxy = {'https': 'http://proxy.server:3128'}
+            bot = telebot.TeleBot(TOKEN)
+            
+            # Shu yerda botni ishga tushiramiz
             bot.polling(none_stop=True, timeout=30, long_polling_timeout=10, skip_pending=False)
+            
         except Exception as e:
             print(f"Xatolik yuz berdi: {e}")
-            time.sleep(10)  # Proksiga ortiqcha yuklama bermaslik uchun 10 soniya tanaffus
-import openpyxl
-import telebot
-from telebot import types, apihelper
-
-# 1. Proksi va Bot ob'ektini e'lon qilish
-apihelper.proxy = {'https': 'http://proxy.server:3128'}
-TOKEN = os.getenv("TOKEN")
-bot = telebot.TeleBot(TOKEN)
-
-# ... Bu yerda sizning boshqa handlerlar va funksiyalaringiz turadi ...
-
-# 2. Faylning ENG OXIRIGA ushbu siklni qo'ying:
-if __name__ == '__main__':
-    print("Bot ishlayapti...")
-    while True:
-        try:
-            bot.infinity_polling(skip_pending=False, timeout=10, long_polling_timeout=5)
-        except Exception as e:
-            print(f"Proksi yoki tarmoq xatosi bo'ldi: {e}")
-            time.sleep(5)
+            time.sleep(10)  # Proksiga ortiqcha yuklama tushmasligi uchun 10 soniya kutish
 
 # Kanal username va Admin ID
 CHANNEL_USERNAME = "@MATEMATIKA_Mingbuloq"
