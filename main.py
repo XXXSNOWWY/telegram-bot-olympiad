@@ -1,6 +1,14 @@
 import os
 import re
 import time
+if __name__ == '__main__':
+    print("Bot ishlayapti...")
+    while True:
+        try:
+            bot.polling(none_stop=True, timeout=30, long_polling_timeout=10, skip_pending=False)
+        except Exception as e:
+            print(f"Xatolik yuz berdi: {e}")
+            time.sleep(10)  # Proksiga ortiqcha yuklama bermaslik uchun 10 soniya tanaffus
 import openpyxl
 import telebot
 from telebot import types, apihelper
