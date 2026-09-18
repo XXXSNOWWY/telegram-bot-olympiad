@@ -70,7 +70,8 @@ if __name__ == '__main__':
             bot.polling(none_stop=True, timeout=30, long_polling_timeout=10, skip_pending=False)
         except Exception as e:
             print(f"Proksi yoki tarmoq xatosi bo'ldi (qayta ulanmoqda): {e}")
-            time.sleep(5)  # 5 soniya kutib qayta ulanadi# Kanal username va Admin ID
+            time.sleep(5)  # 5 soniya kutib qayta ulanadi
+            
 CHANNEL_USERNAME = "@MATEMATIKA_Mingbuloq"
 ADMIN_ID = 1302280468
 
